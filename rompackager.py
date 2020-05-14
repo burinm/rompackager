@@ -80,7 +80,7 @@ for rom in subromstxt:
         # parse out sha1 from SHA1(...x...)
         sha1_string = sha1.split(b'SHA1(')[1][:-1].decode('latin_1')
         
-        subroms[name_string] = {'size' : size_int, 'crc': crc_string, 'sha1': sha1_string}
+        subroms[name_string] = {'size': size_int, 'crc': crc_string, 'sha1': sha1_string}
 
 for k in subroms.keys():
         print("    ", k, subroms[k])
@@ -97,7 +97,8 @@ for path in expandedpaths:
             sys.exit(0)
 
         for z in zipcontents.namelist():
-            for r in subroms.keys():
+            found_list = []
+            for r in subroms.keys():  # keys are the names of the rom
                 if r == z:
                     rom_hash = hashlib.sha1()
                     with zipcontents.open(z) as f:
@@ -105,3 +106,8 @@ for path in expandedpaths:
 
                     if rom_hash.hexdigest() == subroms[r]['sha1']:
                         print(zip_string, "match:", z)
+                        found_list.append(z)
+
+            # Found, don't need to look for this rom(s) anymore
+            for d in found_list:
+                del subroms[d] 
