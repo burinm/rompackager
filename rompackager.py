@@ -2,6 +2,8 @@
 
 import sys
 import shutil
+import os.path
+import glob
 import subprocess
 import zipfile
 
@@ -16,7 +18,7 @@ if mame_exe is None:
 
 new_rom = sys.argv[2]
 
-print("using:", mame_exe, ", Create rom:", new_rom)
+print("using:", mame_exe, ", Create rom [", new_rom, "]")
 print("")
 
 # mame -showconfig
@@ -43,8 +45,15 @@ if rompath is None:
 
 print("rompaths:")
 rompaths = rompath.split(b';')
+expandedpaths = []
 for path in rompaths:
-    print("    ", path.decode('latin_1'))
+
+    # By no means complete, try to fix up path names
+    epath = os.path.expanduser(path)
+    epath = os.path.expandvars(epath)
+
+    expandedpaths.append(epath)
+    print("    ", epath.decode('latin_1'))
 print("")
 
 # mame -listroms <game>
@@ -63,3 +72,8 @@ for rom in subroms:
     if b'SHA1' in rom:
         print("    ", rom.decode('latin_1'))
 
+# search for .zip roms
+for path in expandedpaths:
+    print("searching path:", path.decode('latin_1'))
+    for zip in glob.glob(path + b'/*.zip'):
+        print(zip.decode('latin_1'))
