@@ -66,14 +66,28 @@ if read_romlist.returncode != 0:
 
 romlist = read_romlist.stdout
 print("[", new_rom, "] uses the following roms:")
-subroms = romlist.splitlines()
-for rom in subroms:
-    # This syntax might be mame dependent - expecting "SHA1" string in all rom entries 
+subroms = []
+subromstxt = romlist.splitlines()
+for rom in subromstxt:
+    # This syntax might be mame dependent - expecting "SHA1" string in all rom entries
     if b'SHA1' in rom:
+        subroms.append(rom)
         print("    ", rom.decode('latin_1'))
 
 # search for .zip roms
 for path in expandedpaths:
     print("searching path:", path.decode('latin_1'))
     for zip in glob.glob(path + b'/*.zip'):
-        print(zip.decode('latin_1'))
+        zip_string = zip.decode('latin_1')
+        try:
+            zipcontents = zipfile.ZipFile(zip_string)
+        except:
+            print("This is not a zip file:", zip_string)
+            sys.exit(0)
+
+        for z in zipcontents.namelist(): 
+            for r in subroms:
+                (name, size, crc, sha1) = r.split()
+                name_string = name.decode('latin_1')
+                if name_string == z:
+                    print("match in", zip_string, ":", z)
