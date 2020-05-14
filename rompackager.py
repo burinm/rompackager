@@ -17,9 +17,9 @@ if mame_exe is None:
     print("Cannot find mame executable in path:", sys.argv[1])
     sys.exit(0)
 
-new_rom = sys.argv[2]
+new_rom_name = sys.argv[2]
 
-print("using:", mame_exe, ", Create rom [", new_rom, "]")
+print("using:", mame_exe, ", Create rom [", new_rom_name, "]")
 print("")
 
 # mame -showconfig
@@ -58,15 +58,15 @@ for path in rompaths:
 print("")
 
 # mame -listroms <game>
-get_romlist = [mame_exe, "-listroms", new_rom]
+get_romlist = [mame_exe, "-listroms", new_rom_name]
 read_romlist = subprocess.run(get_romlist, capture_output=True)
 
 if read_romlist.returncode != 0:
-    print("Error: mame has no data on:", new_rom)
+    print("Error: mame has no data on:", new_rom_name)
     sys.exit(0)
 
 romlist = read_romlist.stdout
-print("[", new_rom, "] uses the following roms:")
+print("[", new_rom_name, "] uses the following roms:")
 subroms = {} 
 subromstxt = romlist.splitlines()
 for rom in subromstxt:
@@ -84,6 +84,12 @@ for rom in subromstxt:
 
 for k in subroms.keys():
         print("    ", k, subroms[k])
+
+try:
+    new_rom = zipfile.ZipFile(new_rom_name + ".zip", mode='w')
+except:
+    print("Couldn't open", new_rom_name + ".zip", "for writing")
+    sys.exit(-1)
 
 # search for .zip roms
 for path in expandedpaths:
@@ -107,7 +113,10 @@ for path in expandedpaths:
                     if rom_hash.hexdigest() == subroms[r]['sha1']:
                         print(zip_string, "match:", z)
                         found_list.append(z)
+                        new_rom.writestr(z, zipcontents.read(z))
 
             # Found, don't need to look for this rom(s) anymore
             for d in found_list:
                 del subroms[d] 
+
+new_rom.close()
