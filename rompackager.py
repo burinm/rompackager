@@ -18,8 +18,9 @@ if mame_exe is None:
     sys.exit(0)
 
 new_rom_name = sys.argv[2]
+new_rom_name_zip = new_rom_name + ".zip" 
 
-print("using:", mame_exe, ", Create rom [", new_rom_name, "]")
+print("using:", mame_exe, ", Create rom [", new_rom_name_zip, "]")
 print("")
 
 # mame -showconfig
@@ -86,9 +87,9 @@ for k in subroms.keys():
         print("    ", k, subroms[k])
 
 try:
-    new_rom = zipfile.ZipFile(new_rom_name + ".zip", mode='w')
+    new_rom = zipfile.ZipFile(new_rom_name_zip, mode='w')
 except:
-    print("Couldn't open", new_rom_name + ".zip", "for writing")
+    print("Couldn't open", new_rom_name_zip, "for writing")
     sys.exit(-1)
 
 # search for .zip roms
@@ -120,3 +121,9 @@ for path in expandedpaths:
                 del subroms[d] 
 
 new_rom.close()
+print("Created new romset:", new_rom_name_zip)
+if len(subroms):
+    print("Boo - coudn't find the following roms:")
+    for k in subroms.keys():
+        print(k)
+
