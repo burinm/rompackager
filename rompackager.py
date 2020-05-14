@@ -6,6 +6,7 @@ import os.path
 import glob
 import subprocess
 import zipfile
+import hashlib
 
 if len(sys.argv) != 3:
     print("usage: rompackager <mame executable> <rom to make>")
@@ -66,13 +67,23 @@ if read_romlist.returncode != 0:
 
 romlist = read_romlist.stdout
 print("[", new_rom, "] uses the following roms:")
-subroms = []
+subroms = {} 
 subromstxt = romlist.splitlines()
 for rom in subromstxt:
     # This syntax might be mame dependent - expecting "SHA1" string in all rom entries
     if b'SHA1' in rom:
-        subroms.append(rom)
-        print("    ", rom.decode('latin_1'))
+        (name, size, crc, sha1) = rom.split()
+        name_string = name.decode('latin_1')
+        size_int = int(size)
+        crc_string = crc.decode('latin_1')
+        # ignore CRC, desktop is powerful enough to do sha1
+        # parse out sha1 from SHA1(...x...)
+        sha1_string = sha1.split(b'SHA1(')[1][:-1].decode('latin_1')
+        
+        subroms[name_string] = {'size' : size_int, 'crc': crc_string, 'sha1': sha1_string}
+
+for k in subroms.keys():
+        print("    ", k, subroms[k])
 
 # search for .zip roms
 for path in expandedpaths:
@@ -85,9 +96,12 @@ for path in expandedpaths:
             print("This is not a zip file:", zip_string)
             sys.exit(0)
 
-        for z in zipcontents.namelist(): 
-            for r in subroms:
-                (name, size, crc, sha1) = r.split()
-                name_string = name.decode('latin_1')
-                if name_string == z:
-                    print("match in", zip_string, ":", z)
+        for z in zipcontents.namelist():
+            for r in subroms.keys():
+                if r == z:
+                    rom_hash = hashlib.sha1()
+                    with zipcontents.open(z) as f:
+                        rom_hash.update(f.read())
+
+                    if rom_hash.hexdigest() == subroms[r]['sha1']:
+                        print(zip_string, "match:", z)
